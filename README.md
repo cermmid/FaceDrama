@@ -54,12 +54,18 @@ dla sieci lokalnej, opóźnienie końcowe < 100 ms.
 5. [`docs/05-face-capture.md`](docs/05-face-capture.md) — MediaPipe, streaming mimiki na avatar
 6. [`docs/06-plan-etapow.md`](docs/06-plan-etapow.md) — roadmapa etapów 0–4
 
-## Skrypty startowe
+## Skrypty startowe + kreator "jednym kliknięciem"
 
 Katalog [`UnityStarter/`](UnityStarter/) zawiera skrypty C# do skopiowania do
 `Assets/Scripts/` w projekcie Unity. Wymagają zainstalowanych pakietów (uLipSync,
 Photon Fusion 2 + Voice 2, MediaPipeUnityPlugin) — szczegóły w poszczególnych
 dokumentach. Każdy plik ma nagłówek z opisem, do którego etapu należy.
+
+Najszybsza ścieżka do działającego Etapu 1: **kreator konfiguracji**
+(`UnityStarter/Editor/FaceDramaSetupWizard.cs`) — w Unity otwierasz menu
+*FaceDrama → Kreator konfiguracji*, wskazujesz plik `.glb` z Avaturn i jednym
+kliknięciem dostajesz avatar w scenie ze skonfigurowanym mikrofonem, lip syncem
+i walidacją blend shape'ów. Instrukcja: [`UnityStarter/README.md`](UnityStarter/README.md).
 
 ## Uwagi prawne / etyczne (przed użyciem klinicznym)
 

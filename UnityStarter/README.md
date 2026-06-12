@@ -1,10 +1,27 @@
 # UnityStarter — skrypty do skopiowania do `Assets/Scripts/`
 
-Kopiuj pliki **dopiero na etapie, który ich wymaga** — wcześniej nie skompilują
-się, bo brakuje pakietów (uLipSync, Photon, MediaPipe).
+## Szybki start: kreator (Etap 1 jednym kliknięciem)
+
+Zamiast ręcznie klikać konfigurację z docs/02 i docs/03:
+
+1. Zainstaluj w Package Manager: `com.unity.cloud.gltfast` oraz uLipSync
+   (`https://github.com/hecomi/uLipSync.git#upm`).
+2. Skopiuj `ArkitBlendshapeMap.cs`, `MicAudioSource.cs`, `BlinkAndIdle.cs`
+   do `Assets/Scripts/`, a `Editor/FaceDramaSetupWizard.cs` do
+   `Assets/Scripts/Editor/` (nazwa folderu **Editor** jest obowiązkowa).
+3. Menu **FaceDrama → Kreator konfiguracji** → wskaż plik `.glb` z Avaturn →
+   **Zbuduj wszystko**.
+4. Kreator: importuje avatar, sprawdza blend shape'y ARKit (raport czego
+   brakuje), podpina mikrofon + uLipSync z gotowym mapowaniem, dodaje
+   mruganie i prosty gabinet. Wciskasz Play, mówisz — avatar rusza ustami.
+
+## Pozostałe skrypty (kopiuj na etapie, który ich wymaga)
+
+Wcześniej nie skompilują się, bo brakuje pakietów (uLipSync, Photon, MediaPipe).
 
 | Plik | Etap | Wymagane pakiety |
 |---|---|---|
+| `Editor/FaceDramaSetupWizard.cs` | 1 | glTFast + uLipSync |
 | `ArkitBlendshapeMap.cs` | 1+ | — (czysty Unity) |
 | `MicAudioSource.cs` | 1 | — (czysty Unity) |
 | `BlinkAndIdle.cs` | 1+ | — (czysty Unity) |
