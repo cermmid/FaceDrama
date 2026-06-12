@@ -1,0 +1,66 @@
+# Unity — standardowy .gitignore (projekt Unity będzie żył w UnityProject/)
+# Jeśli założysz projekt w innym katalogu, dostosuj prefiksy.
+
+# Katalogi generowane przez Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# Nigdy nie commituj automatycznie generowanych plików .csproj/.sln
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# Unity3D generated meta files
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Crash reports
+sysinfo.txt
+
+# Buildy
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Crashlytics
+crashlytics-build.properties
+
+# Addressables / packed assets
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+/[Aa]ssets/[Ss]treamingAssets/aa.meta
+/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# IDE
+.idea/
+.vs/
+.vscode/
+*.DotSettings.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Sekrety — App ID Photona trzymaj poza repo, jeśli repo ma być publiczne
+photon-appid.txt
