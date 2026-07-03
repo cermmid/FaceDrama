@@ -1,5 +1,5 @@
-# Unity — standardowy .gitignore (projekt Unity będzie żył w UnityProject/)
-# Jeśli założysz projekt w innym katalogu, dostosuj prefiksy.
+# Unity — standardowy .gitignore. Wzorce są ogólne (bez prefiksu katalogu),
+# więc działają dla projektu Unity o dowolnej nazwie (np. FaceDrama_VR_002/).
 
 # Katalogi generowane przez Unity
 [Ll]ibrary/

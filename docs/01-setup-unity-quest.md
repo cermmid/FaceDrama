@@ -14,8 +14,8 @@ Czas: ok. 0,5–1 dzień, głównie instalacje.
 
 ## 2. Nowy projekt
 
-1. Hub → New project → szablon **Universal 3D** (URP) → nazwa `UnityProject`,
-   lokalizacja: katalog tego repo (`FaceDrama/UnityProject`).
+1. Hub → New project → szablon **Universal 3D** (URP) → nazwa dowolna
+   (w tym projekcie: `FaceDrama_VR_002`), lokalizacja: katalog tego repo.
 2. Po otwarciu: `Edit → Project Settings → Player`:
    - Company/Product name — dowolne,
    - w zakładce Android: **Minimum API Level = 32**, **Scripting Backend = IL2CPP**,
