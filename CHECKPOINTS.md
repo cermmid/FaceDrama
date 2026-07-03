@@ -6,6 +6,7 @@ więc checkpointy zapisujemy tu jako hashe commitów.
 | Checkpoint | Commit | Data | Zawartość |
 |---|---|---|---|
 | **checkpoint-1** | `9014cc0` | 2026-06-13 | Starter kit: README + docs etapów 0–4 + skrypty `UnityStarter/` + kreator konfiguracji (Etap 1 jednym kliknięciem) |
+| **checkpoint-2** | `b449d80` | 2026-06-14 | Etap 1 potwierdzony u użytkownika: fix skali wag blend shape'ów (GLB 0..1), avatar mruga poprawnie, sceneria "polana z jeziorem" w kreatorze |
 
 ## Jak wrócić do checkpointa
 
