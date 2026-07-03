@@ -36,22 +36,7 @@ namespace FaceDrama.EditorTools
         bool _setupLipSync = true;
         readonly List<string> _report = new List<string>();
 
-        // Fonem -> (kanał ARKit, waga 0..1). Spójne z docs/03-lipsync.md.
-        static readonly (string phoneme, string channel, float weight)[] PhonemeMap =
-        {
-            ("A", "jawOpen",           0.7f),
-            ("I", "mouthStretchLeft",  0.5f),
-            ("I", "mouthStretchRight", 0.5f),
-            ("I", "jawOpen",           0.15f),
-            ("U", "mouthPucker",       0.7f),
-            ("U", "mouthFunnel",       0.3f),
-            ("E", "jawOpen",           0.4f),
-            ("E", "mouthStretchLeft",  0.3f),
-            ("E", "mouthStretchRight", 0.3f),
-            ("O", "jawOpen",           0.5f),
-            ("O", "mouthFunnel",       0.6f),
-            ("N", "mouthClose",        0.15f),
-        };
+        // Mapowanie fonem -> kanały ARKit żyje w LipSyncArkitApplier.PhonemeMap.
 
         [MenuItem("FaceDrama/Kreator konfiguracji")]
         static void Open()
@@ -199,28 +184,16 @@ namespace FaceDrama.EditorTools
                 _report.Add("UWAGA: nie znaleziono profilu uLipSync — przypisz Sample profile " +
                             "ręcznie albo skalibruj własny (docs/03, sekcja 3).");
 
-            var bs = voice.AddComponent<uLipSync.uLipSyncBlendShape>();
-            bs.skinnedMeshRenderer = faceMesh;
-
-            var meshMap = ArkitBlendshapeMap.ResolveMeshIndices(faceMesh);
-            int mapped = 0;
-            foreach (var (phoneme, channel, weight) in PhonemeMap)
-            {
-                int meshIdx = meshMap[ArkitBlendshapeMap.ChannelIndex(channel)];
-                if (meshIdx < 0) continue;
-                bs.blendShapes.Add(new uLipSync.uLipSyncBlendShape.BlendShapeInfo
-                {
-                    phoneme = phoneme,
-                    index = meshIdx,
-                    maxWeight = weight,
-                });
-                mapped++;
-            }
+            // Własny applier zamiast uLipSyncBlendShape: wykrywa zakres wag mesha
+            // (GLB: 0..1, FBX: 0..100) i mapuje fonemy na kanały ARKit.
+            var applier = voice.AddComponent<LipSyncArkitApplier>();
+            applier.faceMesh = faceMesh;
 
             // spięcie zdarzeniem (to samo, co ręczne przeciągnięcie w Inspectorze)
-            UnityEventTools.AddPersistentListener(ls.onLipSyncUpdate, bs.OnLipSyncUpdate);
+            UnityEventTools.AddPersistentListener(ls.onLipSyncUpdate, applier.OnLipSyncUpdate);
 
-            _report.Add($"OK: lip sync skonfigurowany ({mapped} mapowań fonem→blend shape). " +
+            float scale = ArkitBlendshapeMap.DetectWeightScale(faceMesh);
+            _report.Add($"OK: lip sync skonfigurowany (zakres wag mesha: 0..{scale:0.##}). " +
                         "Wciśnij Play i mów do mikrofonu.");
         }
 

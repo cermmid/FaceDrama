@@ -6,9 +6,9 @@ Zamiast ręcznie klikać konfigurację z docs/02 i docs/03:
 
 1. Zainstaluj w Package Manager: `com.unity.cloud.gltfast` oraz uLipSync
    (`https://github.com/hecomi/uLipSync.git#upm`).
-2. Skopiuj `ArkitBlendshapeMap.cs`, `MicAudioSource.cs`, `BlinkAndIdle.cs`
-   do `Assets/Scripts/`, a `Editor/FaceDramaSetupWizard.cs` do
-   `Assets/Scripts/Editor/` (nazwa folderu **Editor** jest obowiązkowa).
+2. Skopiuj `ArkitBlendshapeMap.cs`, `MicAudioSource.cs`, `BlinkAndIdle.cs`,
+   `LipSyncArkitApplier.cs` do `Assets/Scripts/`, a `Editor/FaceDramaSetupWizard.cs`
+   do `Assets/Scripts/Editor/` (nazwa folderu **Editor** jest obowiązkowa).
 3. Menu **FaceDrama → Kreator konfiguracji** → wskaż plik `.glb` z Avaturn →
    **Zbuduj wszystko**.
 4. Kreator: importuje avatar, sprawdza blend shape'y ARKit (raport czego
@@ -22,6 +22,7 @@ Wcześniej nie skompilują się, bo brakuje pakietów (uLipSync, Photon, MediaPi
 | Plik | Etap | Wymagane pakiety |
 |---|---|---|
 | `Editor/FaceDramaSetupWizard.cs` | 1 | glTFast + uLipSync |
+| `LipSyncArkitApplier.cs` | 1 | uLipSync |
 | `ArkitBlendshapeMap.cs` | 1+ | — (czysty Unity) |
 | `MicAudioSource.cs` | 1 | — (czysty Unity) |
 | `BlinkAndIdle.cs` | 1+ | — (czysty Unity) |

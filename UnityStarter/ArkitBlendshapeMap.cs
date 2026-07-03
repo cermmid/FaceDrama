@@ -97,6 +97,27 @@ namespace FaceDrama
             return result;
         }
 
+        /// <summary>
+        /// Wykrywa zakres wag blend shape'ów mesha. Modele z FBX używają zwykle
+        /// 0..100, ale import GLB (glTFast) tworzy klatki o wadze pełnego
+        /// wychylenia = 1.0 — ustawienie tam "100" daje 100-krotne przesterowanie
+        /// ("eksplodująca" siatka). Wszystkie skrypty FaceDrama mnożą wagi 0..1
+        /// przez tę wartość zamiast sztywnego 100.
+        /// </summary>
+        public static float DetectWeightScale(SkinnedMeshRenderer smr)
+        {
+            var mesh = smr.sharedMesh;
+            if (mesh == null || mesh.blendShapeCount == 0) return 100f;
+
+            float max = 0f;
+            for (int s = 0; s < mesh.blendShapeCount; s++)
+            {
+                int lastFrame = mesh.GetBlendShapeFrameCount(s) - 1;
+                max = Mathf.Max(max, mesh.GetBlendShapeFrameWeight(s, lastFrame));
+            }
+            return max > 0f ? max : 100f;
+        }
+
         /// <summary>Diagnostyka: wypisuje w konsoli, których kanałów ARKit brakuje na meshu.</summary>
         public static void LogMissingChannels(SkinnedMeshRenderer smr)
         {

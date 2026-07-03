@@ -45,6 +45,7 @@ namespace FaceDrama
 
         FaceCaptureReceiver _capture;
         int[] _map;
+        float _weightScale;
 
         // Mapowanie fonem -> (kanał ARKit, waga 0..1). Punkt wyjścia — patrz
         // docs/03-lipsync.md, dostrój do swojego avatara i profilu kalibracji.
@@ -70,6 +71,7 @@ namespace FaceDrama
             _capture = GetComponent<FaceCaptureReceiver>();
             if (faceMesh == null) faceMesh = GetComponentInChildren<SkinnedMeshRenderer>();
             _map = ArkitBlendshapeMap.ResolveMeshIndices(faceMesh);
+            _weightScale = ArkitBlendshapeMap.DetectWeightScale(faceMesh);
 
             if (lipSync != null)
                 lipSync.onLipSyncUpdate.AddListener(OnLipSyncUpdate);
@@ -113,7 +115,7 @@ namespace FaceDrama
                 };
 
                 int meshIdx = _map[ch];
-                if (meshIdx >= 0) faceMesh.SetBlendShapeWeight(meshIdx, final * 100f);
+                if (meshIdx >= 0) faceMesh.SetBlendShapeWeight(meshIdx, final * _weightScale);
             }
         }
     }

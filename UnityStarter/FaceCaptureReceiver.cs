@@ -47,6 +47,7 @@ namespace FaceDrama
         int _chBlinkL, _chBlinkR;
         int _lastSeenFrameId = -1;
         float _lastFrameTime = -999f;
+        float _weightScale;
         Quaternion _headBoneRestRotation;
 
         public override void Spawned()
@@ -57,6 +58,7 @@ namespace FaceDrama
 
             if (faceMesh == null) faceMesh = GetComponentInChildren<SkinnedMeshRenderer>();
             _map = ArkitBlendshapeMap.ResolveMeshIndices(faceMesh);
+            _weightScale = ArkitBlendshapeMap.DetectWeightScale(faceMesh);
             ArkitBlendshapeMap.LogMissingChannels(faceMesh);
 
             _chBlinkL = ArkitBlendshapeMap.ChannelIndex("eyeBlinkLeft");
@@ -92,7 +94,7 @@ namespace FaceDrama
 
                 int meshIdx = _map[ch];
                 if (meshIdx >= 0)
-                    faceMesh.SetBlendShapeWeight(meshIdx, SmoothedWeights[ch] * 100f);
+                    faceMesh.SetBlendShapeWeight(meshIdx, SmoothedWeights[ch] * _weightScale);
             }
 
             if (headBone != null)

@@ -63,6 +63,21 @@ korzystaj z tego, pojedyncze `jawOpen` wygląda jak kukiełka. Dobre ustawienia
 3. Docelowo profil kalibrujemy na **głos terapeuty** (to jego głos będzie
    analizowany).
 
+## Pułapka: zakres wag blend shape'ów (GLB ≠ FBX)
+
+Unity tradycyjnie traktuje wagi blend shape'ów jako **0–100**, ale avatar
+importowany z **GLB przez glTFast** ma klatki kształtów zdefiniowane w skali
+**0–1** (tak zapisuje je format glTF). Ustawienie wagi "100" na takim meshu
+daje 100-krotne przesterowanie — twarz/głowa dosłownie "eksploduje" na czas
+mrugnięcia czy sylaby, a brwi latają nienaturalnie wysoko.
+
+Skrypty FaceDrama wykrywają skalę automatycznie
+(`ArkitBlendshapeMap.DetectWeightScale`) — dlatego do nakładania ust używamy
+własnego `LipSyncArkitApplier` zamiast komponentu `uLipSyncBlendShape`
+(który zakłada 0–100). Jeśli konfigurujesz coś ręcznie i widzisz "wybuchy"
+siatki, to prawie na pewno ten problem: sprawdź, w jakiej skali są wagi
+(w Inspectorze przesuń suwak blend shape'a — pełny efekt przy 1 czy przy 100?).
+
 ## 4. Test
 
 - Play mode w edytorze → mów do mikrofonu → okno uLipSync (wizualizacja)

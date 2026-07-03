@@ -23,9 +23,11 @@ namespace FaceDrama
         public float blinkDuration = 0.12f;
 
         [Header("Mikroruchy brwi")]
-        [Range(0f, 30f)] public float browNoiseAmount = 8f;
+        [Tooltip("Amplituda jako ułamek pełnego wychylenia (0..1).")]
+        [Range(0f, 0.3f)] public float browNoiseAmount = 0.08f;
 
         int[] _map;
+        float _weightScale;
         int _chBlinkL, _chBlinkR, _chBrowInnerUp;
         float _lastExternalDataTime = -999f;
         float _nextBlinkTime;
@@ -35,6 +37,7 @@ namespace FaceDrama
         {
             if (faceMesh == null) faceMesh = GetComponentInChildren<SkinnedMeshRenderer>();
             _map = ArkitBlendshapeMap.ResolveMeshIndices(faceMesh);
+            _weightScale = ArkitBlendshapeMap.DetectWeightScale(faceMesh);
             _chBlinkL = ArkitBlendshapeMap.ChannelIndex("eyeBlinkLeft");
             _chBlinkR = ArkitBlendshapeMap.ChannelIndex("eyeBlinkRight");
             _chBrowInnerUp = ArkitBlendshapeMap.ChannelIndex("browInnerUp");
@@ -57,13 +60,13 @@ namespace FaceDrama
                 ScheduleNextBlink();
             }
             float t = (Time.time - _blinkStartTime) / blinkDuration;
-            float blink = t < 1f ? Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * 100f : 0f;
+            float blink = t < 1f ? Mathf.Sin(Mathf.Clamp01(t) * Mathf.PI) * _weightScale : 0f;
             SetWeight(_chBlinkL, blink);
             SetWeight(_chBlinkR, blink);
 
             // delikatny "oddech" brwi, żeby twarz nie była martwa
             float brow = (Mathf.PerlinNoise(Time.time * 0.3f, 0.5f) - 0.5f) * 2f * browNoiseAmount;
-            SetWeight(_chBrowInnerUp, Mathf.Max(0f, brow));
+            SetWeight(_chBrowInnerUp, Mathf.Max(0f, brow) * _weightScale);
         }
 
         void ScheduleNextBlink() =>
