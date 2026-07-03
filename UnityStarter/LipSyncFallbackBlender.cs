@@ -36,8 +36,10 @@ namespace FaceDrama
         [Tooltip("Wygładzanie ust z audio (s).")]
         public float audioSmoothingTime = 0.06f;
 
-        [Tooltip("Minimalna głośność (0..1), poniżej której fonem ignorujemy.")]
-        public float volumeThreshold = 0.01f;
+        // uLipSync podaje surową głośność RMS — normalizacja log10 jak w LipSyncArkitApplier
+        [Header("Czułość na głośność (skala log10)")]
+        [Range(-5f, 0f)] public float minVolume = -2.5f;
+        [Range(-5f, 0f)] public float maxVolume = -1.5f;
 
         // Wagi docelowe ust wyliczone z fonemu uLipSync (indeks = kanał ARKit).
         readonly float[] _audioTarget = new float[ArkitBlendshapeMap.Count];
@@ -79,19 +81,27 @@ namespace FaceDrama
                 Debug.LogWarning("[FaceDrama] LipSyncFallbackBlender: brak referencji do uLipSync.");
         }
 
+        float NormalizedVolume(float rawVolume)
+        {
+            if (rawVolume < 1e-6f) return 0f;
+            float log = Mathf.Log10(rawVolume);
+            return Mathf.Clamp01((log - minVolume) / Mathf.Max(0.01f, maxVolume - minVolume));
+        }
+
         /// <summary>Callback uLipSync — przelicza fonem na wagi kanałów ARKit.</summary>
         public void OnLipSyncUpdate(LipSyncInfo info)
         {
             for (int i = 0; i < _audioTarget.Length; i++) _audioTarget[i] = 0f;
-            if (info.volume < volumeThreshold) return;
+
+            float vol = NormalizedVolume(info.volume);
+            if (vol <= 0f) return;
 
             foreach (var (phoneme, channel, weight) in PhonemeMap)
             {
                 if (phoneme != info.phoneme) continue;
                 int ch = ArkitBlendshapeMap.ChannelIndex(channel);
                 if (ch >= 0)
-                    _audioTarget[ch] = Mathf.Max(_audioTarget[ch],
-                        weight * Mathf.Clamp01(info.volume));
+                    _audioTarget[ch] = Mathf.Max(_audioTarget[ch], weight * vol);
             }
         }
 

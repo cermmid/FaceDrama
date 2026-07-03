@@ -23,8 +23,13 @@ namespace FaceDrama
         [Tooltip("Wygładzanie ust (stała czasowa, s).")]
         public float smoothingTime = 0.06f;
 
-        [Tooltip("Minimalna głośność (0..1), poniżej której fonem ignorujemy.")]
-        public float volumeThreshold = 0.01f;
+        // uLipSync podaje SUROWĄ głośność RMS (zwykle 0.001..0.1) — normalizujemy
+        // ją logarytmicznie do 0..1, jak robi to oryginalny uLipSyncBlendShape.
+        [Header("Czułość na głośność (skala log10)")]
+        [Tooltip("Głośność (log10), przy której usta zaczynają się otwierać. Za słaba reakcja -> obniż (np. -3.5).")]
+        [Range(-5f, 0f)] public float minVolume = -2.5f;
+        [Tooltip("Głośność (log10), przy której usta są w pełni otwarte. Za słaba reakcja -> obniż (np. -2).")]
+        [Range(-5f, 0f)] public float maxVolume = -1.5f;
 
         // Fonem -> (kanał ARKit, waga 0..1). Punkt wyjścia — dostrój wg
         // docs/03-lipsync.md. Ta sama tabela co w LipSyncFallbackBlender (Etap 3).
@@ -59,19 +64,27 @@ namespace FaceDrama
             _weightScale = ArkitBlendshapeMap.DetectWeightScale(faceMesh);
         }
 
+        float NormalizedVolume(float rawVolume)
+        {
+            if (rawVolume < 1e-6f) return 0f;
+            float log = Mathf.Log10(rawVolume);
+            return Mathf.Clamp01((log - minVolume) / Mathf.Max(0.01f, maxVolume - minVolume));
+        }
+
         /// <summary>Callback zdarzenia On Lip Sync Update komponentu uLipSync.</summary>
         public void OnLipSyncUpdate(LipSyncInfo info)
         {
             for (int i = 0; i < _target.Length; i++) _target[i] = 0f;
-            if (info.volume < volumeThreshold) return;
+
+            float vol = NormalizedVolume(info.volume);
+            if (vol <= 0f) return;
 
             foreach (var (phoneme, channel, weight) in PhonemeMap)
             {
                 if (phoneme != info.phoneme) continue;
                 int ch = ArkitBlendshapeMap.ChannelIndex(channel);
                 if (ch >= 0)
-                    _target[ch] = Mathf.Max(_target[ch],
-                        weight * Mathf.Clamp01(info.volume));
+                    _target[ch] = Mathf.Max(_target[ch], weight * vol);
             }
         }
 

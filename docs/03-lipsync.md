@@ -84,6 +84,11 @@ siatki, to prawie na pewno ten problem: sprawdź, w jakiej skali są wagi
   pokazuje rozpoznane fonemy, avatar rusza ustami.
 - Jeśli usta drgają chaotycznie: zwiększ `Smoothness`, sprawdź czy AudioSource
   nie ma włączonego dodatkowego przetwarzania, skalibruj profil.
+- Jeśli usta ledwo się otwierają przy normalnej mowie: to czułość na głośność.
+  W `LipSyncArkitApplier` obniż `Min Volume` (np. do -3.5) i `Max Volume`
+  (np. do -2) — to okno log10 surowej głośności RMS mapowane na otwarcie ust
+  0..1. Cichy mikrofon = niższe wartości. Sprawdź też systemowy poziom
+  wzmocnienia mikrofonu.
 - Build na Quest: uLipSync używa Burst/Job System — działa na Quest bez zmian
   (na MVP możesz mówić do mikrofonu samych gogli, żeby przetestować standalone).
 
