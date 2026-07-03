@@ -43,6 +43,7 @@ namespace FaceDrama
         FaceCaptureSender _sender;
         LipSyncFallbackBlender _mouthBlender;
         BlinkAndIdle _idle;
+        IdleBodyMotion _idleBody;
         int[] _map;
         int _chBlinkL, _chBlinkR;
         int _lastSeenFrameId = -1;
@@ -55,6 +56,7 @@ namespace FaceDrama
             _sender = GetComponent<FaceCaptureSender>();
             _mouthBlender = GetComponent<LipSyncFallbackBlender>();
             _idle = GetComponent<BlinkAndIdle>();
+            _idleBody = GetComponent<IdleBodyMotion>();
 
             if (faceMesh == null) faceMesh = GetComponentInChildren<SkinnedMeshRenderer>();
             _map = ArkitBlendshapeMap.ResolveMeshIndices(faceMesh);
@@ -77,6 +79,10 @@ namespace FaceDrama
                 _lastFrameTime = Time.time;
                 _idle?.NotifyExternalData();
             }
+            // gdy operator steruje głową (świeże dane + kość), idle głowy ustępuje
+            if (_idleBody != null)
+                _idleBody.headMotionEnabled = !HasFreshData || headBone == null;
+
             if (!HasFreshData) return; // BlinkAndIdle przejmie twarz
 
             float k = 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(0.001f, smoothingTime));

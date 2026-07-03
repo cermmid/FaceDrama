@@ -98,7 +98,9 @@ namespace FaceDrama.EditorTools
             ValidateBlendshapes(faceMesh);
 
             avatar.AddComponent<BlinkAndIdle>().faceMesh = faceMesh;
-            _report.Add("OK: BlinkAndIdle (automatyczne mruganie) dodane.");
+            avatar.AddComponent<IdleBodyMotion>();
+            _report.Add("OK: mruganie (BlinkAndIdle) + naturalna postawa i idle ciała " +
+                        "(IdleBodyMotion; ręce układają się z T-pose po wciśnięciu Play).");
 
             if (_setupLipSync) SetupLipSync(avatar, faceMesh);
             if (_scenery == Scenery.PolanaZJeziorem) BuildMeadow(avatar);
