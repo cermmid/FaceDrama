@@ -1,64 +1,69 @@
 // FaceDrama — Etap 1 (bez zależności zewnętrznych)
 //
 // Avatar z Avaturn przychodzi w T-pose i stoi jak manekin. Ten komponent:
-//  1) na starcie (Play) układa ręce wzdłuż tułowia — naturalna, rozluźniona
-//     postawa; liczone geometrycznie (FromToRotation na kierunkach kości),
-//     więc działa niezależnie od lokalnych osi konkretnego riga,
+//  1) układa ciało w naturalną, rozluźnioną postawę (opuszczone barki, ręce
+//     wzdłuż tułowia, zgięte łokcie, przymknięte palce) — liczone
+//     geometrycznie (FromToRotation na kierunkach kości), więc działa
+//     niezależnie od lokalnych osi konkretnego riga,
 //  2) animuje delikatny "idle" żywego człowieka: oddech klatką piersiową,
-//     powolne przenoszenie ciężaru ciała, mikroruchy głowy.
+//     kołysanie tułowia (nogi stoją w miejscu), mikroruchy głowy.
+//
+// Suwaki postawy działają NA ŻYWO w Play mode — każda zmiana wraca do
+// zapamiętanej T-pose i nakłada kąty od nowa. Wartości dostrojone w Play
+// przepisz potem do komponentu (zmiany z Play mode się nie zapisują).
 //
 // Bez Animatora i bez zewnętrznych animacji. Wyższa jakość później:
 // animacje idle z Mixamo (rig Avaturn jest z nimi zgodny) — docs/06, Etap 4.
-//
-// Podpięcie: na korzeń avatara (kreator robi to sam). Kości znajdowane po
-// nazwach Mixamo/Avaturn: Hips, Spine/Chest, Head, LeftArm, LeftForeArm...
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace FaceDrama
 {
     public class IdleBodyMotion : MonoBehaviour
     {
-        [Header("Postawa (stosowana raz, na starcie)")]
+        [Header("Postawa (edytowalna na żywo w Play mode)")]
         [Tooltip("Opuszczenie barków/obojczyków (stopnie) — T-pose trzyma je uniesione.")]
-        [Range(0f, 15f)] public float shoulderDrop = 6f;
+        [Range(0f, 20f)] public float shoulderDrop = 6f;
         [Tooltip("Odchylenie rąk od tułowia w stopniach (0 = ręce pionowo w dół).")]
-        [Range(0f, 40f)] public float armOutwardTilt = 10f;
+        [Range(0f, 45f)] public float armOutwardTilt = 10f;
         [Tooltip("Lekki dryf rąk do przodu (stopnie) — rozluźnione ręce nie wiszą idealnie w pionie.")]
-        [Range(0f, 15f)] public float armForwardDrift = 5f;
+        [Range(0f, 30f)] public float armForwardDrift = 5f;
         [Tooltip("Zgięcie łokci do przodu (stopnie).")]
-        [Range(0f, 35f)] public float forearmBend = 18f;
+        [Range(0f, 60f)] public float forearmBend = 18f;
         [Tooltip("Zwinięcie palców (stopnie na paliczek) — 0 = rozcapierzona 'deska'.")]
-        [Range(0f, 30f)] public float fingerCurl = 14f;
+        [Range(0f, 45f)] public float fingerCurl = 14f;
 
         [Header("Idle")]
         [Tooltip("Długość cyklu oddechu (s).")]
         public float breathCycle = 4.5f;
         [Range(0f, 5f)] public float breathAmount = 1.6f;
-        [Tooltip("Przenoszenie ciężaru — kołysanie bioder (stopnie).")]
+        [Tooltip("Kołysanie tułowia od pasa w górę (stopnie); nogi stoją w miejscu.")]
         [Range(0f, 4f)] public float swayAmount = 1.2f;
         [Tooltip("Mikroruchy głowy (stopnie).")]
         [Range(0f, 6f)] public float headAmount = 2.5f;
         [Tooltip("Etap 3: FaceCaptureReceiver wyłącza to, gdy głową steruje operator.")]
         public bool headMotionEnabled = true;
 
-        Transform _hips, _chest, _head;
-        Quaternion _restHips, _restChest, _restHead;
+        Transform _hips, _spine, _chest, _head;
+        Quaternion _restSpine, _restChest, _restHead;
+        readonly List<(Transform bone, Quaternion tposeLocalRot)> _tposeCache
+            = new List<(Transform, Quaternion)>();
+        float _lastPostureHash = float.NaN;
         const float Seed = 13.7f; // deterministyczny szum — avatar zawsze "ten sam"
 
         void Start()
         {
             _hips = FindBone("Hips");
+            _spine = FindBone("Spine");
             _chest = FindBone("Spine2") ?? FindBone("Chest")
-                  ?? FindBone("Spine1") ?? FindBone("Spine");
+                  ?? FindBone("Spine1") ?? _spine;
             _head = FindBone("Head");
 
-            PoseShoulder("LeftShoulder", "LeftArm");
-            PoseShoulder("RightShoulder", "RightArm");
-            PoseArm("LeftArm", "LeftForeArm", "LeftHand");
-            PoseArm("RightArm", "RightForeArm", "RightHand");
+            CacheTPose();
+            ApplyPosture();
 
-            if (_hips != null) _restHips = _hips.localRotation;
+            if (_spine != null) _restSpine = _spine.localRotation;
             if (_chest != null) _restChest = _chest.localRotation;
             if (_head != null) _restHead = _head.localRotation;
 
@@ -73,6 +78,49 @@ namespace FaceDrama
                 if (t.name.EndsWith(suffix, System.StringComparison.OrdinalIgnoreCase))
                     return t;
             return null;
+        }
+
+        // ---- Postawa ----
+
+        // Zapamiętuje rotacje T-pose wszystkich kości, które pozujemy — dzięki
+        // temu postawę można nakładać wielokrotnie (suwaki na żywo).
+        void CacheTPose()
+        {
+            _tposeCache.Clear();
+            foreach (string name in new[]
+            {
+                "LeftShoulder", "RightShoulder",
+                "LeftArm", "RightArm",
+                "LeftForeArm", "RightForeArm",
+            })
+            {
+                var bone = FindBone(name);
+                if (bone != null) _tposeCache.Add((bone, bone.localRotation));
+            }
+            foreach (string handName in new[] { "LeftHand", "RightHand" })
+            {
+                var hand = FindBone(handName);
+                if (hand == null) continue;
+                foreach (var bone in hand.GetComponentsInChildren<Transform>())
+                    _tposeCache.Add((bone, bone.localRotation));
+            }
+        }
+
+        float PostureHash() =>
+            shoulderDrop + armOutwardTilt * 3.1f + armForwardDrift * 7.7f
+            + forearmBend * 17f + fingerCurl * 31f;
+
+        void ApplyPosture()
+        {
+            // powrót do T-pose, potem kąty od nowa — dzięki temu suwaki są "absolutne"
+            foreach (var (bone, rot) in _tposeCache) bone.localRotation = rot;
+
+            PoseShoulder("LeftShoulder", "LeftArm");
+            PoseShoulder("RightShoulder", "RightArm");
+            PoseArm("LeftArm", "LeftForeArm", "LeftHand");
+            PoseArm("RightArm", "RightForeArm", "RightHand");
+
+            _lastPostureHash = PostureHash();
         }
 
         // Opuszcza obojczyk: kierunek "bark -> ramię" pochylamy w dół o shoulderDrop.
@@ -143,22 +191,25 @@ namespace FaceDrama
             }
         }
 
+        // ---- Idle ----
+
         void LateUpdate()
         {
+            // suwaki postawy ruszone w Play mode -> przelicz postawę od nowa
+            if (!Mathf.Approximately(PostureHash(), _lastPostureHash)) ApplyPosture();
+
             float t = Time.time;
+            float sway = (Mathf.PerlinNoise(t * 0.15f, Seed) - 0.5f) * 2f * swayAmount;
+            float breath = Mathf.Sin(t * 2f * Mathf.PI / Mathf.Max(1f, breathCycle))
+                           * breathAmount;
+
+            // kołysanie na kręgosłupie (nie na biodrach!) — nogi stoją w miejscu
+            if (_spine != null && _spine != _chest)
+                _spine.localRotation = _restSpine * Quaternion.Euler(0f, 0f, sway);
 
             if (_chest != null)
-            {
-                float breath = Mathf.Sin(t * 2f * Mathf.PI / Mathf.Max(1f, breathCycle))
-                               * breathAmount;
-                _chest.localRotation = _restChest * Quaternion.Euler(breath, 0f, 0f);
-            }
-
-            if (_hips != null)
-            {
-                float sway = (Mathf.PerlinNoise(t * 0.15f, Seed) - 0.5f) * 2f * swayAmount;
-                _hips.localRotation = _restHips * Quaternion.Euler(0f, 0f, sway);
-            }
+                _chest.localRotation = _restChest * Quaternion.Euler(
+                    breath, 0f, _spine == _chest ? sway : 0f);
 
             if (_head != null && headMotionEnabled)
             {
