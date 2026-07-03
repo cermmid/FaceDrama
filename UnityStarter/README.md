@@ -13,7 +13,8 @@ Zamiast ręcznie klikać konfigurację z docs/02 i docs/03:
    **Zbuduj wszystko**.
 4. Kreator: importuje avatar, sprawdza blend shape'y ARKit (raport czego
    brakuje), podpina mikrofon + uLipSync z gotowym mapowaniem, dodaje
-   mruganie i prosty gabinet. Wciskasz Play, mówisz — avatar rusza ustami.
+   mruganie i scenerię (do wyboru: sielska polana z jeziorem albo prosty
+   gabinet). Wciskasz Play, mówisz — avatar rusza ustami.
 
 ## Pozostałe skrypty (kopiuj na etapie, który ich wymaga)
 
