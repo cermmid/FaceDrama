@@ -20,10 +20,16 @@ namespace FaceDrama
     public class IdleBodyMotion : MonoBehaviour
     {
         [Header("Postawa (stosowana raz, na starcie)")]
+        [Tooltip("Opuszczenie barków/obojczyków (stopnie) — T-pose trzyma je uniesione.")]
+        [Range(0f, 15f)] public float shoulderDrop = 6f;
         [Tooltip("Odchylenie rąk od tułowia w stopniach (0 = ręce pionowo w dół).")]
-        [Range(0f, 40f)] public float armOutwardTilt = 12f;
-        [Tooltip("Lekkie zgięcie łokci do przodu (stopnie).")]
-        [Range(0f, 30f)] public float forearmBend = 12f;
+        [Range(0f, 40f)] public float armOutwardTilt = 10f;
+        [Tooltip("Lekki dryf rąk do przodu (stopnie) — rozluźnione ręce nie wiszą idealnie w pionie.")]
+        [Range(0f, 15f)] public float armForwardDrift = 5f;
+        [Tooltip("Zgięcie łokci do przodu (stopnie).")]
+        [Range(0f, 35f)] public float forearmBend = 18f;
+        [Tooltip("Zwinięcie palców (stopnie na paliczek) — 0 = rozcapierzona 'deska'.")]
+        [Range(0f, 30f)] public float fingerCurl = 14f;
 
         [Header("Idle")]
         [Tooltip("Długość cyklu oddechu (s).")]
@@ -47,6 +53,8 @@ namespace FaceDrama
                   ?? FindBone("Spine1") ?? FindBone("Spine");
             _head = FindBone("Head");
 
+            PoseShoulder("LeftShoulder", "LeftArm");
+            PoseShoulder("RightShoulder", "RightArm");
             PoseArm("LeftArm", "LeftForeArm", "LeftHand");
             PoseArm("RightArm", "RightForeArm", "RightHand");
 
@@ -67,9 +75,23 @@ namespace FaceDrama
             return null;
         }
 
+        // Opuszcza obojczyk: kierunek "bark -> ramię" pochylamy w dół o shoulderDrop.
+        // Bez tego barki zostają uniesione jak w T-pose (efekt "wzruszonych ramion").
+        void PoseShoulder(string shoulderName, string upperName)
+        {
+            var shoulder = FindBone(shoulderName);
+            var upper = FindBone(upperName);
+            if (shoulder == null || upper == null) return;
+
+            Vector3 dir = (upper.position - shoulder.position).normalized;
+            Vector3 target = (dir + Vector3.down * Mathf.Tan(shoulderDrop * Mathf.Deg2Rad))
+                .normalized;
+            shoulder.rotation = Quaternion.FromToRotation(dir, target) * shoulder.rotation;
+        }
+
         // Układa rękę z T-pose wzdłuż tułowia. Kierunek "ramię -> łokieć"
         // obracamy do celu: prawie pionowo w dół, z lekkim odchyleniem na
-        // zewnątrz (zachowujemy poziomą składową obecnego kierunku).
+        // zewnątrz i minimalnie do przodu (rozluźniona ręka nie jest pionem).
         void PoseArm(string upperName, string forearmName, string handName)
         {
             var upper = FindBone(upperName);
@@ -78,7 +100,9 @@ namespace FaceDrama
 
             Vector3 dir = (forearm.position - upper.position).normalized;
             Vector3 outward = new Vector3(dir.x, 0f, dir.z).normalized;
-            Vector3 target = (Vector3.down + outward * Mathf.Tan(armOutwardTilt * Mathf.Deg2Rad))
+            Vector3 target = (Vector3.down
+                              + outward * Mathf.Tan(armOutwardTilt * Mathf.Deg2Rad)
+                              + transform.forward * Mathf.Tan(armForwardDrift * Mathf.Deg2Rad))
                 .normalized;
             upper.rotation = Quaternion.FromToRotation(dir, target) * upper.rotation;
 
@@ -88,6 +112,35 @@ namespace FaceDrama
             Vector3 ftarget = (fdir + transform.forward * Mathf.Tan(forearmBend * Mathf.Deg2Rad))
                 .normalized;
             forearm.rotation = Quaternion.FromToRotation(fdir, ftarget) * forearm.rotation;
+
+            CurlFingers(hand);
+        }
+
+        // Delikatnie zwija palce (bez kciuka). Każdy paliczek pochylamy w stronę
+        // ciała (dłonie po pozowaniu wiszą przy udach, wnętrzem do ciała), więc
+        // "w stronę bioder" ≈ kierunek zginania. Geometrycznie, bez założeń o osiach.
+        void CurlFingers(Transform hand)
+        {
+            if (fingerCurl <= 0f || _hips == null) return;
+
+            foreach (var bone in hand.GetComponentsInChildren<Transform>())
+            {
+                if (bone == hand) continue;
+                string n = bone.name;
+                bool finger = n.Contains("Index") || n.Contains("Middle")
+                           || n.Contains("Ring") || n.Contains("Pinky");
+                if (!finger || bone.childCount == 0) continue;
+
+                Vector3 dir = (bone.GetChild(0).position - bone.position).normalized;
+                Vector3 towardBody = _hips.position - bone.position;
+                towardBody.y = 0f;
+                if (towardBody.sqrMagnitude < 1e-6f) continue;
+                towardBody.Normalize();
+
+                Vector3 target = (dir + towardBody * Mathf.Tan(fingerCurl * Mathf.Deg2Rad))
+                    .normalized;
+                bone.rotation = Quaternion.FromToRotation(dir, target) * bone.rotation;
+            }
         }
 
         void LateUpdate()
